@@ -381,6 +381,18 @@ public final class Utils {
 		return result;
 	}
 
+	public static Map<String, LocalResource> calculateHopsLocalResources(Map<String, String> hopsLocalResources,
+		YarnConfiguration yarnConfig) throws IOException {
+		// register Flink Jar with remote HDFS
+		Map<String, LocalResource> localResources = new HashMap<>();
+		for (String key : hopsLocalResources.keySet()) {
+			Path remoteJarPath = new Path(hopsLocalResources.get(key));
+			FileSystem fs = remoteJarPath.getFileSystem(yarnConfig);
+			localResources.put(key, registerLocalResource(fs, remoteJarPath));
+		}
+		return localResources;
+	}
+
 	/**
 	 * Creates the launch context, which describes how to bring up a TaskExecutor / TaskManager process in
 	 * an allocated YARN container.
