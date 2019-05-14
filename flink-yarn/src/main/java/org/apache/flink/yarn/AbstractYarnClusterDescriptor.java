@@ -144,6 +144,29 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 	private final Set<File> userJarFiles = new HashSet<>();
 
 	private YarnConfigOptions.UserJarInclusion userJarInclusion;
+	// -------------------------------------------------------------
+	// Hopsworks variables and methods
+	// -------------------------------------------------------------
+	private final Map<String, String> hopsLocalResources = new HashMap<>();
+	private Path stagingDir;
+	private YarnClientApplication yarnApplication;
+	private GetNewApplicationResponse appResponse;
+	public void setStagingDir(Path stagingDir) {
+		this.stagingDir = stagingDir;
+	}
+
+	public void setYarnApplication(YarnClientApplication yarnApplication) {
+		this.yarnApplication = yarnApplication;
+	}
+
+	public void setAppResponse(GetNewApplicationResponse appResponse) {
+		this.appResponse = appResponse;
+	}
+
+	public void addHopsLocalResources(String key, String path) {
+		hopsLocalResources.put(key, path);
+	}
+	// -------------------------------------------------------------
 
 	public AbstractYarnClusterDescriptor(
 			Configuration flinkConfiguration,
@@ -471,8 +494,10 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		// ------------------ Check if the YARN ClusterClient has the requested resources --------------
 
 		// Create application via yarnClient
-		final YarnClientApplication yarnApplication = yarnClient.createApplication();
-		final GetNewApplicationResponse appResponse = yarnApplication.getNewApplicationResponse();
+		if (yarnApplication == null) {
+			yarnApplication = yarnClient.createApplication();
+			appResponse = yarnApplication.getNewApplicationResponse();
+		}
 
 		Resource maxRes = appResponse.getMaximumResourceCapability();
 
@@ -672,7 +697,12 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		// Copy the application master jar to the filesystem
 		// Create a local resource to point to the destination jar path
 		final FileSystem fs = FileSystem.get(yarnConfiguration);
-		final Path homeDir = fs.getHomeDirectory();
+		final Path homeDir;
+		if (stagingDir != null) {
+			homeDir = stagingDir;
+		} else {
+			homeDir = fs.getHomeDirectory();
+		}
 
 		// hard coded check for the GoogleHDFS client because its not overriding the getScheme() method.
 		if (!fs.getClass().getSimpleName().equals("GoogleHadoopFileSystem") &&
@@ -747,11 +777,16 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		}
 
 		// local resource map for Yarn
+		//Calculate Hopsworks local resources
 		final Map<String, LocalResource> localResources = new HashMap<>(2 + systemShipFiles.size() + userJarFiles.size());
+		localResources.putAll(Utils.calculateHopsLocalResources(hopsLocalResources, yarnConfiguration));
 		// list of remote paths (after upload)
 		final List<Path> paths = new ArrayList<>(2 + systemShipFiles.size() + userJarFiles.size());
 		// ship list that enables reuse of resources for task manager containers
 		StringBuilder envShipFileList = new StringBuilder();
+		for (String key : hopsLocalResources.keySet()) {
+			envShipFileList.append(key).append("=").append(hopsLocalResources.get(key)).append(",");
+		}
 
 		// upload and register ship files
 		List<String> systemClassPaths = uploadAndRegisterFiles(
@@ -834,6 +869,9 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		classPathBuilder.append("flink.jar").append(File.pathSeparator);
 		paths.add(remotePathConf);
 		classPathBuilder.append("flink-conf.yaml").append(File.pathSeparator);
+		for (String key : hopsLocalResources.keySet()) {
+			classPathBuilder.append(key).append(File.pathSeparator);
+		}
 
 		// write job graph to tmp file and add it to local resource
 		// TODO: server use user main method to generate job graph
@@ -1062,7 +1100,13 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 	 */
 	private Path getYarnFilesDir(final ApplicationId appId) throws IOException {
 		final FileSystem fileSystem = FileSystem.get(yarnConfiguration);
-		final Path homeDir = fileSystem.getHomeDirectory();
+		final Path homeDir;
+		if (stagingDir != null) {
+			homeDir = stagingDir;
+		} else {
+			homeDir = fileSystem.getHomeDirectory();
+		}
+
 		return new Path(homeDir, ".flink/" + appId + '/');
 	}
 
