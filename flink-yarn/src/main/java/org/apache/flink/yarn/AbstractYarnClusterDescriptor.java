@@ -145,6 +145,26 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 
 	private YarnConfigOptions.UserJarInclusion userJarInclusion;
 
+	/** Hopsworks helper methods. */
+
+	private Path stagingDir;
+
+	private YarnClientApplication yarnApplication;
+
+	private GetNewApplicationResponse appResponse;
+
+	public void setStagingDir(Path stagingDir) {
+		this.stagingDir = stagingDir;
+	}
+
+	public void setYarnApplication(YarnClientApplication yarnApplication) {
+		this.yarnApplication = yarnApplication;
+	}
+
+	public void setAppResponse(GetNewApplicationResponse appResponse) {
+		this.appResponse = appResponse;
+	}
+
 	public AbstractYarnClusterDescriptor(
 			Configuration flinkConfiguration,
 			YarnConfiguration yarnConfiguration,
@@ -471,8 +491,10 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		// ------------------ Check if the YARN ClusterClient has the requested resources --------------
 
 		// Create application via yarnClient
-		final YarnClientApplication yarnApplication = yarnClient.createApplication();
-		final GetNewApplicationResponse appResponse = yarnApplication.getNewApplicationResponse();
+		if (yarnApplication == null) {
+			yarnApplication = yarnClient.createApplication();
+			appResponse = yarnApplication.getNewApplicationResponse();
+		}
 
 		Resource maxRes = appResponse.getMaximumResourceCapability();
 
@@ -672,7 +694,12 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 		// Copy the application master jar to the filesystem
 		// Create a local resource to point to the destination jar path
 		final FileSystem fs = FileSystem.get(yarnConfiguration);
-		final Path homeDir = fs.getHomeDirectory();
+		final Path homeDir;
+		if (stagingDir != null) {
+			homeDir = stagingDir;
+		} else {
+			homeDir = fs.getHomeDirectory();
+		}
 
 		// hard coded check for the GoogleHDFS client because its not overriding the getScheme() method.
 		if (!fs.getClass().getSimpleName().equals("GoogleHadoopFileSystem") &&
@@ -1062,7 +1089,13 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 	 */
 	private Path getYarnFilesDir(final ApplicationId appId) throws IOException {
 		final FileSystem fileSystem = FileSystem.get(yarnConfiguration);
-		final Path homeDir = fileSystem.getHomeDirectory();
+		final Path homeDir;
+		if (stagingDir != null) {
+			homeDir = stagingDir;
+		} else {
+			homeDir = fileSystem.getHomeDirectory();
+		}
+
 		return new Path(homeDir, ".flink/" + appId + '/');
 	}
 
