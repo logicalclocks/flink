@@ -26,7 +26,7 @@ under the License.
 		<version>1.9.2</version>
 		<relativePath>..</relativePath>
 	</parent>
-
+	<groupId>io.hops.flink</groupId>
 	<artifactId>flink-yarn_${scala.binary.version}</artifactId>
 	<name>flink-yarn</name>
 	<packaging>jar</packaging>
@@ -98,7 +98,6 @@ under the License.
 			<version>${hadoop.version}</version>
 		</dependency>
 	</dependencies>
-
 	<profiles>
 		<profile>
 			<!-- Hadoop >= 2.6 moved the S3 file systems from hadoop-common into hadoop-aws artifact
