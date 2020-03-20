@@ -100,6 +100,7 @@ public class AbstractYarnClusterTest extends TestLogger {
 			null,
 			1L,
 			2L,
+			3L,
 			finalApplicationStatus,
 			null,
 			null,
