@@ -170,6 +170,20 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 	}
 	// -------------------------------------------------------------
 
+	// -------------------------------------------------------------
+	// Yarn Docker runtime
+	// -------------------------------------------------------------
+	private boolean docker = false;
+	private String dockerImage;
+	private String dockerMounts;
+
+	public void setDocker(String dockerImage, String dockerMounts){
+	docker = true;
+	this.dockerImage = dockerImage;
+	this.dockerMounts = dockerMounts;
+	}
+	// -------------------------------------------------------------
+
 	public AbstractYarnClusterDescriptor(
 			Configuration flinkConfiguration,
 			YarnConfiguration yarnConfiguration,
@@ -1029,6 +1043,11 @@ public abstract class AbstractYarnClusterDescriptor implements ClusterDescriptor
 			appMasterEnv.put(YarnConfigKeys.ENV_DYNAMIC_PROPERTIES, dynamicPropertiesEncoded);
 		}
 
+		if (docker) {
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", dockerImage);
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_MOUNTS", dockerMounts);
+		}
 		// set classpath from YARN configuration
 		Utils.setupYarnClassPath(yarnConfiguration, appMasterEnv);
 

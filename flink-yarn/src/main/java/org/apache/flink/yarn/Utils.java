@@ -551,6 +551,14 @@ public final class Utils {
 		Map<String, String> containerEnv = new HashMap<>();
 		containerEnv.putAll(tmParams.taskManagerEnv());
 
+		log.info("YARN_CONTAINER_RUNTIME_TYPE: " + env.get("YARN_CONTAINER_RUNTIME_TYPE"));
+		if (env.get("YARN_CONTAINER_RUNTIME_TYPE") != null &&
+			env.get("YARN_CONTAINER_RUNTIME_TYPE").equals("docker")) {
+			containerEnv.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
+			containerEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", env.get("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE"));
+			containerEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_MOUNTS", env.get("YARN_CONTAINER_RUNTIME_DOCKER_MOUNTS"));
+		}
+
 		// add YARN classpath, etc to the container environment
 		containerEnv.put(ENV_FLINK_CLASSPATH, classPathString);
 		setupYarnClassPath(yarnConfig, containerEnv);
