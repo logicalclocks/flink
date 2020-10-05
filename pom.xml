@@ -1056,6 +1056,17 @@ under the License.
 			</activation>
 			<!-- Add vendor maven repositories -->
 			<repositories>
+				<repository>
+					<id>Hops</id>
+					<name>Hops Repository</name>
+					<url>https://archiva.hops.works/repository/Hops/</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
 				<!-- Cloudera -->
 				<repository>
 					<id>cloudera-releases</id>
