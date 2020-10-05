@@ -175,7 +175,21 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 		hopsLocalResources.put(key, path);
 	}
 	// -------------------------------------------------------------
-
+	
+	// -------------------------------------------------------------
+	// Yarn Docker runtime
+	// -------------------------------------------------------------
+	private boolean docker = false;
+	private String dockerImage;
+	private String dockerMounts;
+	
+	public void setDocker(String dockerImage, String dockerMounts){
+		docker = true;
+		this.dockerImage = dockerImage;
+		this.dockerMounts = dockerMounts;
+	}
+	// -------------------------------------------------------------
+	
 	public YarnClusterDescriptor(
 			Configuration flinkConfiguration,
 			YarnConfiguration yarnConfiguration,
@@ -976,7 +990,12 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 		if (remoteKrb5Path != null) {
 			appMasterEnv.put(YarnConfigKeys.ENV_KRB5_PATH, remoteKrb5Path.toString());
 		}
-
+		
+		if (docker) {
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", dockerImage);
+			appMasterEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_MOUNTS", dockerMounts);
+		}
 		// set classpath from YARN configuration
 		Utils.setupYarnClassPath(yarnConfiguration, appMasterEnv);
 
