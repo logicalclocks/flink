@@ -151,7 +151,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 	private String zookeeperNamespace;
 
 	private YarnConfigOptions.UserJarInclusion userJarInclusion;
-	
+
 	// -------------------------------------------------------------
 	// Hopsworks variables and methods
 	// -------------------------------------------------------------
@@ -162,34 +162,34 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 	public void setStagingDir(Path stagingDir) {
 		this.stagingDir = stagingDir;
 	}
-	
+
 	public void setYarnApplication(YarnClientApplication yarnApplication) {
 		this.yarnApplication = yarnApplication;
 	}
-	
+
 	public void setAppResponse(GetNewApplicationResponse appResponse) {
 		this.appResponse = appResponse;
 	}
-	
+
 	public void addHopsLocalResources(String key, String path) {
 		hopsLocalResources.put(key, path);
 	}
 	// -------------------------------------------------------------
-	
+
 	// -------------------------------------------------------------
 	// Yarn Docker runtime
 	// -------------------------------------------------------------
 	private boolean docker = false;
 	private String dockerImage;
 	private String dockerMounts;
-	
+
 	public void setDocker(String dockerImage, String dockerMounts){
 		docker = true;
 		this.dockerImage = dockerImage;
 		this.dockerMounts = dockerMounts;
 	}
 	// -------------------------------------------------------------
-	
+
 	public YarnClusterDescriptor(
 			Configuration flinkConfiguration,
 			YarnConfiguration yarnConfiguration,
@@ -741,7 +741,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 		//Calculate Hopsworks local resources
 		final Map<String, LocalResource> localResources = new HashMap<>(2 + systemShipFiles.size() + userJarFiles.size());
 		localResources.putAll(Utils.calculateHopsLocalResources(hopsLocalResources, yarnConfiguration));
-		
+
 		// list of remote paths (after upload)
 		final List<Path> paths = new ArrayList<>(2 + systemShipFiles.size() + userJarFiles.size());
 		// ship list that enables reuse of resources for task manager containers
@@ -749,7 +749,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 		for (String key : hopsLocalResources.keySet()) {
 			envShipFileList.append(key).append("=").append(hopsLocalResources.get(key)).append(",");
 		}
-		
+
 		// upload and register ship files, these files will be added to classpath.
 		List<String> systemClassPaths = uploadAndRegisterFiles(
 			systemShipFiles,
@@ -990,7 +990,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 		if (remoteKrb5Path != null) {
 			appMasterEnv.put(YarnConfigKeys.ENV_KRB5_PATH, remoteKrb5Path.toString());
 		}
-		
+
 		if (docker) {
 			appMasterEnv.put("YARN_CONTAINER_RUNTIME_TYPE", "docker");
 			appMasterEnv.put("YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", dockerImage);
